@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>日本酒 都道府県制覇マップ｜さけマップ</title>
+<meta name="description" content="飲んだ日本酒の県をタップするだけ。あなたの都道府県制覇マップを1枚の画像にして、Xやインスタに載せられます。">
+<meta name="apple-itunes-app" content="app-id=6837936887">
+<meta property="og:title" content="日本酒 都道府県制覇マップ">
+<meta property="og:description" content="飲んだ県をタップして、制覇マップを作る。">
+<meta property="og:image" content="https://qrbathbomb-sketch.github.io/apps/sake/map/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../icon.png">
+<link rel="apple-touch-icon" href="../icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&display=swap">
+<style>
+:root{--top:#38578f;--night:#172652;--ink:#f2f5fc;--sub:#bdc9e3;--tint:#ffcce0}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:linear-gradient(var(--top),var(--night) 60%);background-attachment:fixed;color:var(--ink);font:16px/1.7 "Shippori Mincho","Hiragino Mincho ProN",serif;-webkit-tap-highlight-color:transparent}
+main{max-width:560px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:24px;font-weight:600;letter-spacing:.12em;margin:0;text-align:center}
+.count{text-align:center;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.count b{font-size:64px;font-weight:400;letter-spacing:.02em}
+.count span{font-size:22px;color:var(--sub)}
+.hint{text-align:center;color:var(--sub);font-size:14px;margin:0 0 6px}
+svg{display:block;width:100%;height:auto;touch-action:manipulation}
+svg path{fill:rgba(255,255,255,.14);stroke:rgba(179,204,255,.75);stroke-width:1.1;cursor:pointer;transition:fill .15s}
+svg path.on{fill:var(--tint)}
+.note{min-height:28px;text-align:center;font-size:15px;color:var(--sub);margin:6px 0 14px}
+.note b{color:var(--ink);font-weight:600}
+.act{display:flex;gap:10px}
+.act button,.act a{flex:1;display:block;text-align:center;font:inherit;font-size:16px;padding:13px 8px;border-radius:999px;text-decoration:none;cursor:pointer}
+.primary{background:var(--ink);color:var(--night);border:0}
+.ghost{background:none;color:var(--ink);border:1px solid rgba(242,245,252,.45)}
+.app{margin:34px 0 0;padding:18px 0 0;border-top:1px solid rgba(242,245,252,.2);display:flex;gap:14px;align-items:center;color:var(--ink);text-decoration:none}
+.app img{width:58px;height:58px;border-radius:14px}
+.app p{margin:0;font-size:15px}
+.app small{display:block;color:var(--sub);font-size:13px}
+.reset{display:block;margin:22px auto 0;background:none;border:0;color:var(--sub);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+footer{margin-top:30px;font-size:12px;color:var(--sub);text-align:center;line-height:1.9}
+footer a{color:var(--sub)}
+#preview{display:none;position:fixed;inset:0;background:rgba(8,12,28,.92);z-index:9;padding:24px 18px;overflow:auto;text-align:center}
+#preview img{max-width:100%;max-height:72vh;border-radius:6px}
+#preview p{color:var(--sub);font-size:14px;margin:12px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>日本酒 都道府県制覇マップ</h1>
+<p class="count"><b id="n">0</b><span> / 47</span></p>
+<p class="hint">飲んだことのある県を、タップ</p>
+<svg id="map" role="group" aria-label="日本地図"></svg>
+<p class="note" id="note">&nbsp;</p>
+<div class="act">
+  <button class="primary" id="img">画像にする</button>
+  <a class="ghost" id="post" target="_blank" rel="noopener">Xにポスト</a>
+</div>
+<a class="app" href="../">
+  <img src="../icon.png" alt="">
+  <p>写真で埋まる地図は、アプリで<small>さけマップ（無料・iPhone）<br>ラベルを撮るだけで、県がお酒の写真で埋まる</small></p>
+</a>
+<button class="reset" id="reset">はじめからやり直す</button>
+<footer>
+お酒は20歳になってから。<br>
+銘柄数は<a href="https://sakenowa.com" target="_blank" rel="noopener">さけのわデータ</a>を利用しています。<br>
+地図：<a href="https://github.com/dataofjapan/land" target="_blank" rel="noopener">dataofjapan/land</a>
+</footer>
+</main>
+<div id="preview"><img id="pimg" alt="制覇マップの画像"><p>長押しで保存できます。</p><button class="ghost" id="close" style="padding:10px 28px;border-radius:999px;font:inherit">閉じる</button></div>
+<script src="data.js"></script>
+<script>
+const M=window.MAP, svg=document.getElementById('map'), NS='http://www.w3.org/2000/svg';
+svg.setAttribute('viewBox',`0 0 ${M.w} ${M.h}`);
+let on=new Set();
+// 状態はURLの#に入れる（47県＝47ビットを36進で）。送った地図がそのまま開く
+const enc=()=>{let v=0n;on.forEach(i=>v|=1n<<BigInt(i-1));return v.toString(36)};
+const dec=s=>{const r=new Set();try{let v=[...s].reduce((a,c)=>a*36n+BigInt(parseInt(c,36)),0n);for(let i=1;i<=47;i++)if(v>>BigInt(i-1)&1n)r.add(i)}catch(e){}return r};
+const fromHash=location.hash.slice(1);
+on=fromHash?dec(fromHash):dec(localStorage.getItem('sakemap')||'');
+const els={};
+M.p.forEach(p=>{const e=document.createElementNS(NS,'path');e.setAttribute('d',p.d);e.setAttribute('aria-label',p.n);
+  e.addEventListener('click',()=>{on.has(p.id)?on.delete(p.id):on.add(p.id);update(p)});svg.appendChild(e);els[p.id]=e});
+function postURL(){const t=`日本酒の都道府県制覇、いま ${on.size}/47県。\n#日本酒 #日本酒好きな人と繋がりたい #さけマップ\n`;
+  return 'https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(location.origin+location.pathname+'#'+enc())}
+function update(p){
+  M.p.forEach(q=>els[q.id].classList.toggle('on',on.has(q.id)));
+  document.getElementById('n').textContent=on.size;
+  const h=enc(); history.replaceState(null,'',on.size?'#'+h:location.pathname); localStorage.setItem('sakemap',h);
+  document.getElementById('post').href=postURL();
+  if(p)document.getElementById('note').innerHTML=on.has(p.id)?`<b>${p.n}</b>　制覇。この県の銘柄は ${p.c} 種類`:`<b>${p.n}</b>　まだ`;
+  else if(on.size===47)document.getElementById('note').innerHTML='<b>全県制覇</b>';
+}
+update();
+document.getElementById('reset').onclick=()=>{if(confirm('塗った県をすべて消しますか？')){on.clear();update();document.getElementById('note').innerHTML='&nbsp;'}};
+document.getElementById('close').onclick=()=>document.getElementById('preview').style.display='none';
+
+// 1080×1350（4:5）の画像を作る。アプリの共有画像と同じ組み方
+async function draw(){
+  await document.fonts.load('600 54px "Shippori Mincho"');await document.fonts.load('400 30px "Shippori Mincho"');
+  const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#38578f');g.addColorStop(.6,'#172652');x.fillStyle=g;x.fillRect(0,0,W,H);
+  const F='"Shippori Mincho","Hiragino Mincho ProN",serif';x.textAlign='center';x.fillStyle='#f2f5fc';
+  x.font=`600 54px ${F}`;x.letterSpacing='6px';x.fillText('日本酒 都道府県制覇マップ',W/2,140);x.letterSpacing='0px';
+  x.font=`400 130px ${F}`;const n=String(on.size),nw=x.measureText(n).width;x.font=`400 46px ${F}`;const sw=x.measureText('  /  47').width;
+  const left=W/2-(nw+sw)/2;x.textAlign='left';x.font=`400 130px ${F}`;x.fillText(n,left,290);x.fillStyle='#bdc9e3';x.font=`400 46px ${F}`;x.fillText('  /  47',left+nw,290);
+  const bw=960,bh=820,s=Math.min(bw/M.w,bh/M.h),ox=(W-M.w*s)/2,oy=320+(bh-M.h*s)/2;
+  x.save();x.translate(ox,oy);x.scale(s,s);
+  M.p.forEach(p=>{const path=new Path2D(p.d);x.fillStyle=on.has(p.id)?'#ffcce0':'rgba(255,255,255,.14)';x.fill(path)});
+  x.strokeStyle='rgba(179,204,255,.75)';x.lineWidth=1.2/s*1.1;M.p.forEach(p=>x.stroke(new Path2D(p.d)));x.restore();
+  x.textAlign='center';x.fillStyle='#f2f5fc';x.font=`600 34px ${F}`;x.fillText('さけマップ',W/2,1250);
+  x.fillStyle='#bdc9e3';x.font=`400 24px ${F}`;x.fillText('App Storeで「さけマップ」と検索',W/2,1292);
+  return c;
+}
+document.getElementById('img').onclick=async()=>{
+  const c=await draw();const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+  const file=new File([blob],'sakemap.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:`日本酒の都道府県制覇、いま ${on.size}/47県。#さけマップ`});return}catch(e){if(e.name==='AbortError')return}}
+  document.getElementById('pimg').src=URL.createObjectURL(blob);document.getElementById('preview').style.display='block';
+};
+</script>
+</body>
+</html>
