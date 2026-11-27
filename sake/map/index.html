@@ -20,10 +20,13 @@
 html,body{margin:0;min-height:100%}
 body{background:linear-gradient(var(--top),var(--night) 60%);background-attachment:fixed;color:var(--ink);font:16px/1.7 "Shippori Mincho","Hiragino Mincho ProN",serif;-webkit-tap-highlight-color:transparent}
 main{max-width:560px;margin:0 auto;padding:28px 18px 48px}
-h1{font-size:24px;font-weight:600;letter-spacing:.12em;margin:0;text-align:center}
+h1{font-size:24px;font-weight:600;letter-spacing:.12em;margin:0;text-align:center;cursor:pointer}
 .count{text-align:center;margin:2px 0 0;font-variant-numeric:tabular-nums}
 .count b{font-size:64px;font-weight:400;letter-spacing:.02em}
 .count span{font-size:22px;color:var(--sub)}
+.kind{display:flex;justify-content:center;gap:4px;margin:8px 0 0}.kind button{font:inherit;font-size:14px;background:none;border:1px solid transparent;color:var(--sub);padding:2px 14px;border-radius:999px;cursor:pointer}.kind button.on{border-color:rgba(242,245,252,.45);color:var(--ink)}
+body.shochu{--top:#3d2e1f;--night:#171209;--ink:#f7f0e0;--sub:#ccb899;--tint:#f2c48a}
+body.shochu svg path{stroke:rgba(237,186,117,.75)}
 .hint{text-align:center;color:var(--sub);font-size:14px;margin:0 0 6px}
 svg{display:block;width:100%;height:auto;touch-action:manipulation}
 svg path{fill:rgba(255,255,255,.14);stroke:rgba(179,204,255,.75);stroke-width:1.1;cursor:pointer;transition:fill .15s}
@@ -48,7 +51,8 @@ footer a{color:var(--sub)}
 </head>
 <body>
 <main>
-<h1>日本酒 都道府県制覇マップ</h1>
+<h1 id="title">日本酒 都道府県制覇マップ</h1>
+<p class="kind" id="kind"><button data-k="sake">日本酒</button><button data-k="shochu">焼酎</button></p>
 <p class="count"><b id="n">0</b><span> / 47</span></p>
 <p class="hint">飲んだことのある県を、タップ</p>
 <svg id="map" role="group" aria-label="日本地図"></svg>
@@ -73,23 +77,34 @@ footer a{color:var(--sub)}
 <script>
 const M=window.MAP, svg=document.getElementById('map'), NS='http://www.w3.org/2000/svg';
 svg.setAttribute('viewBox',`0 0 ${M.w} ${M.h}`);
-let on=new Set();
+const L={sake:{name:'日本酒',key:'sakemap',tag:'#日本酒 #日本酒好きな人と繋がりたい #さけマップ',top:'#38578f',night:'#172652',ink:'#f2f5fc',sub:'#bdc9e3',tint:'#ffcce0',line:'rgba(179,204,255,.75)'},
+ shochu:{name:'焼酎',key:'shochumap',tag:'#焼酎 #焼酎好きな人と繋がりたい #さけマップ',top:'#3d2e1f',night:'#171209',ink:'#f7f0e0',sub:'#ccb899',tint:'#f2c48a',line:'rgba(237,186,117,.75)'}};
+let on=new Set(),mode='sake';
 // 状態はURLの#に入れる（47県＝47ビットを36進で）。送った地図がそのまま開く
 const enc=()=>{let v=0n;on.forEach(i=>v|=1n<<BigInt(i-1));return v.toString(36)};
 const dec=s=>{const r=new Set();try{let v=[...s].reduce((a,c)=>a*36n+BigInt(parseInt(c,36)),0n);for(let i=1;i<=47;i++)if(v>>BigInt(i-1)&1n)r.add(i)}catch(e){}return r};
+// 焼酎は #s.xxxx
 const fromHash=location.hash.slice(1);
-on=fromHash?dec(fromHash):dec(localStorage.getItem('sakemap')||'');
+mode=fromHash.startsWith('s.')?'shochu':fromHash?'sake':(localStorage.getItem('sakemap.mode')||'sake');
+const code=fromHash.replace(/^s\./,'');
+on=code?dec(code):dec(localStorage.getItem(L[mode].key)||'');
 const els={};
 M.p.forEach(p=>{const e=document.createElementNS(NS,'path');e.setAttribute('d',p.d);e.setAttribute('aria-label',p.n);
   e.addEventListener('click',()=>{on.has(p.id)?on.delete(p.id):on.add(p.id);update(p)});svg.appendChild(e);els[p.id]=e});
-function postURL(){const t=`日本酒の都道府県制覇、いま ${on.size}/47県。\n#日本酒 #日本酒好きな人と繋がりたい #さけマップ\n`;
-  return 'https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(location.origin+location.pathname+'#'+enc())}
+const hashOf=()=>(mode==='shochu'?'s.':'')+enc();
+function postURL(){const t=`${L[mode].name}の都道府県制覇、いま ${on.size}/47県。\n${L[mode].tag}\n`;
+  return 'https://twitter.com/intent/tweet?text='+encodeURIComponent(t)+'&url='+encodeURIComponent(location.origin+location.pathname+'#'+hashOf())}
+function setMode(m){mode=m;localStorage.setItem('sakemap.mode',m);on=dec(localStorage.getItem(L[m].key)||'');document.getElementById('note').innerHTML='&nbsp;';update()}
+document.getElementById('kind').onclick=e=>{const k=e.target.dataset.k;if(k&&k!==mode)setMode(k)};
+document.getElementById('title').onclick=()=>setMode(mode==='sake'?'shochu':'sake');
 function update(p){
   M.p.forEach(q=>els[q.id].classList.toggle('on',on.has(q.id)));
   document.getElementById('n').textContent=on.size;
-  const h=enc(); history.replaceState(null,'',on.size?'#'+h:location.pathname); localStorage.setItem('sakemap',h);
+  document.body.classList.toggle('shochu',mode==='shochu');document.getElementById('title').textContent=`${L[mode].name} 都道府県制覇マップ`;document.title=`${L[mode].name} 都道府県制覇マップ｜さけマップ`;
+  document.querySelectorAll('#kind button').forEach(b=>b.classList.toggle('on',b.dataset.k===mode));
+  history.replaceState(null,'',on.size?'#'+hashOf():location.pathname); localStorage.setItem(L[mode].key,enc());
   document.getElementById('post').href=postURL();
-  if(p)document.getElementById('note').innerHTML=on.has(p.id)?`<b>${p.n}</b>　制覇。この県の銘柄は ${p.c} 種類`:`<b>${p.n}</b>　まだ`;
+  if(p)document.getElementById('note').innerHTML=on.has(p.id)?`<b>${p.n}</b>　制覇${mode==='sake'?`。この県の銘柄は ${p.c} 種類`:''}`:`<b>${p.n}</b>　まだ`;
   else if(on.size===47)document.getElementById('note').innerHTML='<b>全県制覇</b>';
 }
 update();
@@ -100,23 +115,23 @@ document.getElementById('close').onclick=()=>document.getElementById('preview').
 async function draw(){
   await document.fonts.load('600 54px "Shippori Mincho"');await document.fonts.load('400 30px "Shippori Mincho"');
   const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#38578f');g.addColorStop(.6,'#172652');x.fillStyle=g;x.fillRect(0,0,W,H);
-  const F='"Shippori Mincho","Hiragino Mincho ProN",serif';x.textAlign='center';x.fillStyle='#f2f5fc';
-  x.font=`600 54px ${F}`;x.letterSpacing='6px';x.fillText('日本酒 都道府県制覇マップ',W/2,140);x.letterSpacing='0px';
+  const g=x.createLinearGradient(0,0,0,H);const C0=L[mode];g.addColorStop(0,C0.top);g.addColorStop(.6,C0.night);x.fillStyle=g;const C=L[mode];x.fillRect(0,0,W,H);
+  const F='"Shippori Mincho","Hiragino Mincho ProN",serif';x.textAlign='center';x.fillStyle=C.ink;
+  x.font=`600 54px ${F}`;x.letterSpacing='6px';x.fillText(`${C.name} 都道府県制覇マップ`,W/2,140);x.letterSpacing='0px';
   x.font=`400 130px ${F}`;const n=String(on.size),nw=x.measureText(n).width;x.font=`400 46px ${F}`;const sw=x.measureText('  /  47').width;
-  const left=W/2-(nw+sw)/2;x.textAlign='left';x.font=`400 130px ${F}`;x.fillText(n,left,290);x.fillStyle='#bdc9e3';x.font=`400 46px ${F}`;x.fillText('  /  47',left+nw,290);
+  const left=W/2-(nw+sw)/2;x.textAlign='left';x.font=`400 130px ${F}`;x.fillText(n,left,290);x.fillStyle=C.sub;x.font=`400 46px ${F}`;x.fillText('  /  47',left+nw,290);
   const bw=960,bh=820,s=Math.min(bw/M.w,bh/M.h),ox=(W-M.w*s)/2,oy=320+(bh-M.h*s)/2;
   x.save();x.translate(ox,oy);x.scale(s,s);
-  M.p.forEach(p=>{const path=new Path2D(p.d);x.fillStyle=on.has(p.id)?'#ffcce0':'rgba(255,255,255,.14)';x.fill(path)});
-  x.strokeStyle='rgba(179,204,255,.75)';x.lineWidth=1.2/s*1.1;M.p.forEach(p=>x.stroke(new Path2D(p.d)));x.restore();
-  x.textAlign='center';x.fillStyle='#f2f5fc';x.font=`600 34px ${F}`;x.fillText('さけマップ',W/2,1250);
-  x.fillStyle='#bdc9e3';x.font=`400 24px ${F}`;x.fillText('App Storeで「さけマップ」と検索',W/2,1292);
+  M.p.forEach(p=>{const path=new Path2D(p.d);x.fillStyle=on.has(p.id)?C.tint:'rgba(255,255,255,.14)';x.fill(path)});
+  x.strokeStyle=C.line;x.lineWidth=1.2/s*1.1;M.p.forEach(p=>x.stroke(new Path2D(p.d)));x.restore();
+  x.textAlign='center';x.fillStyle=C.ink;x.font=`600 34px ${F}`;x.fillText('さけマップ',W/2,1250);
+  x.fillStyle=C.sub;x.font=`400 24px ${F}`;x.fillText('App Storeで「さけマップ」と検索',W/2,1292);
   return c;
 }
 document.getElementById('img').onclick=async()=>{
   const c=await draw();const blob=await new Promise(r=>c.toBlob(r,'image/png'));
   const file=new File([blob],'sakemap.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:`日本酒の都道府県制覇、いま ${on.size}/47県。#さけマップ`});return}catch(e){if(e.name==='AbortError')return}}
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:`${L[mode].name}の都道府県制覇、いま ${on.size}/47県。#さけマップ`});return}catch(e){if(e.name==='AbortError')return}}
   document.getElementById('pimg').src=URL.createObjectURL(blob);document.getElementById('preview').style.display='block';
 };
 </script>
