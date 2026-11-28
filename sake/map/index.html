@@ -42,12 +42,15 @@ svg path.on{fill:var(--tint)}
 .app p{margin:0;font-size:15px}
 .app small{display:block;color:var(--sub);font-size:13px}
 .reset{display:block;margin:22px auto 0;background:none;border:0;color:var(--sub);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer}
+.about{margin-top:40px;border-top:1px solid rgba(242,245,252,.2);padding-top:8px}.about h2{font-size:18px;font-weight:600;margin:26px 0 6px;letter-spacing:.06em}.about p{margin:0 0 8px;font-size:15px}.about .small{font-size:13px;color:var(--sub)}.rank{list-style:none;padding:0;margin:8px 0 0;columns:2;column-gap:22px;font-size:14px}.rank li{display:flex;gap:8px;padding:3px 0;border-bottom:1px solid rgba(242,245,252,.1);break-inside:avoid}.rank span{width:1.6em;color:var(--sub);font-variant-numeric:tabular-nums}.rank b{margin-left:auto;font-weight:400;font-variant-numeric:tabular-nums}.about dt{font-weight:600;margin-top:12px;font-size:15px}.about dd{margin:2px 0 0;color:var(--sub);font-size:14px}
 footer{margin-top:30px;font-size:12px;color:var(--sub);text-align:center;line-height:1.9}
 footer a{color:var(--sub)}
 #preview{display:none;position:fixed;inset:0;background:rgba(8,12,28,.92);z-index:9;padding:24px 18px;overflow:auto;text-align:center}
 #preview img{max-width:100%;max-height:72vh;border-radius:6px}
 #preview p{color:var(--sub);font-size:14px;margin:12px 0}
 </style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "日本酒 都道府県制覇マップ", "url": "https://qrbathbomb-sketch.github.io/apps/sake/map/", "applicationCategory": "LifestyleApplication", "operatingSystem": "Web", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"}, "description": "飲んだ日本酒・焼酎の県をタップして、都道府県制覇マップを画像でシェア。"}</script>
+<link rel="canonical" href="https://qrbathbomb-sketch.github.io/apps/sake/map/">
 </head>
 <body>
 <main>
@@ -66,6 +69,20 @@ footer a{color:var(--sub)}
   <p>写真で埋まる地図は、アプリで<small>さけマップ（無料・iPhone）<br>ラベルを撮るだけで、県がお酒の写真で埋まる</small></p>
 </a>
 <button class="reset" id="reset">はじめからやり直す</button>
+<section class="about">
+<h2>日本酒の都道府県制覇とは</h2>
+<p>飲んだ日本酒の産地を、47都道府県ぶん集めていく楽しみ方です。日本酒は47都道府県すべてで造られているので、旅先や居酒屋で「まだ飲んでいない県」を選ぶと、知らなかった銘柄に出会えます。</p>
+<h2>都道府県別 日本酒の銘柄数</h2>
+<p class="small">さけのわデータに登録されている銘柄の数です（2026年11月時点）。銘柄が多い県ほど、制覇のための1本は見つけやすくなります。</p>
+<ol class="rank"><li><span>1</span>新潟県<b>266</b></li><li><span>2</span>長野県<b>188</b></li><li><span>3</span>福島県<b>164</b></li><li><span>4</span>京都府<b>155</b></li><li><span>5</span>兵庫県<b>154</b></li><li><span>6</span>山形県<b>132</b></li><li><span>7</span>秋田県<b>117</b></li><li><span>8</span>福岡県<b>102</b></li><li><span>9</span>宮城県<b>97</b></li><li><span>10</span>岐阜県<b>96</b></li><li><span>11</span>広島県<b>89</b></li><li><span>12</span>愛知県<b>80</b></li><li><span>13</span>滋賀県<b>80</b></li><li><span>14</span>岩手県<b>79</b></li><li><span>15</span>茨城県<b>79</b></li><li><span>16</span>石川県<b>79</b></li><li><span>17</span>奈良県<b>78</b></li><li><span>18</span>三重県<b>74</b></li><li><span>19</span>青森県<b>71</b></li><li><span>20</span>愛媛県<b>65</b></li><li><span>21</span>福井県<b>63</b></li><li><span>22</span>埼玉県<b>62</b></li><li><span>23</span>栃木県<b>61</b></li><li><span>24</span>群馬県<b>59</b></li><li><span>25</span>岡山県<b>58</b></li><li><span>26</span>北海道<b>56</b></li><li><span>27</span>島根県<b>56</b></li><li><span>28</span>千葉県<b>53</b></li><li><span>29</span>静岡県<b>53</b></li><li><span>30</span>神奈川県<b>46</b></li><li><span>31</span>和歌山県<b>46</b></li><li><span>32</span>山口県<b>45</b></li><li><span>33</span>佐賀県<b>45</b></li><li><span>34</span>富山県<b>40</b></li><li><span>35</span>高知県<b>37</b></li><li><span>36</span>東京都<b>32</b></li><li><span>37</span>大阪府<b>32</b></li><li><span>38</span>鳥取県<b>32</b></li><li><span>39</span>大分県<b>31</b></li><li><span>40</span>熊本県<b>27</b></li><li><span>41</span>香川県<b>20</b></li><li><span>42</span>長崎県<b>20</b></li><li><span>43</span>徳島県<b>19</b></li><li><span>44</span>山梨県<b>18</b></li><li><span>45</span>宮崎県<b>9</b></li><li><span>46</span>鹿児島県<b>8</b></li><li><span>47</span>沖縄県<b>5</b></li></ol>
+<h2>よくある質問</h2>
+<dl>
+<dt>登録やログインは要りますか？</dt><dd>要りません。塗った県はこの端末のブラウザと、ページのURLに入ります。URLを送れば、同じ地図を相手も開けます。</dd>
+<dt>焼酎でも使えますか？</dt><dd>使えます。題字か「焼酎」を押すと、焼酎の地図に切り替わります。日本酒とは別々に記録されます。</dd>
+<dt>写真で地図を埋めたい</dt><dd>iPhoneアプリ「さけマップ」なら、ラベルを撮るだけで銘柄と産地を読み取り、県の形がお酒の写真で埋まっていきます。</dd>
+</dl>
+</section>
+
 <footer>
 お酒は20歳になってから。<br>
 銘柄数は<a href="https://sakenowa.com" target="_blank" rel="noopener">さけのわデータ</a>を利用しています。<br>
